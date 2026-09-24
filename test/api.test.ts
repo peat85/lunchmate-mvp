@@ -55,7 +55,7 @@ describe("auth", () => {
   });
 
   it("requires a valid session", async () => {
-    expect((await request(app).get("/api/me").expect(200)).body).toEqual({ user: null });
+    expect((await request(app).get("/api/me").expect(200)).body).toEqual({ user: null, demo: false });
     await request(app).get("/api/board").expect(401);
     await request(app).get("/api/board").set("Cookie", "lm_session=1.9999999999999.forged").expect(401);
     await request(app).post("/api/entries").send(lunch).expect(401);
@@ -165,5 +165,45 @@ describe("lunches", () => {
     const { body } = await a.post("/api/entries").send(lunch);
     const res = await b.post(`/api/entries/${body.entry.id}/join`).send({}).expect(201);
     expect(res.body.notified).toBe(false);
+  });
+});
+
+describe("demo mode", () => {
+  const make = (demo: boolean) => createApp({ db: openDb(":memory:"), mailer: { send: async () => false }, sessionSecret: "s",
+    timeZone: "Europe/Berlin", appUrl: "http://test", secureCookies: false, now: () => NOW, demo });
+
+  it("is off by default", async () => {
+    const off = make(false);
+    expect((await request(off).get("/api/me")).body.demo).toBe(false);
+    await request(off).post("/api/demo-login").expect(404);
+  });
+
+  it("signs in without an account and shows synthetic sample lunches", async () => {
+    const on = make(true);
+    expect((await request(on).get("/api/me")).body.demo).toBe(true);
+    const agent = request.agent(on);
+    const res = await agent.post("/api/demo-login").expect(200);
+    expect(res.body.user.email).toBe("demo@lunchmatch.test");
+    const board = (await agent.get("/api/board").expect(200)).body;
+    expect(board.open.length).toBeGreaterThanOrEqual(2);
+    // idempotent: signing in again doesn't duplicate lunches
+    await agent.post("/api/demo-login").expect(200);
+    expect((await agent.get("/api/board")).body.open).toHaveLength(board.open.length);
+    // the demo user can join like anyone else
+    await agent.post(`/api/entries/${board.open[0].id}/join`).send({}).expect(201);
+  });
+});
+
+describe("demo test accounts", () => {
+  it("patrick and greg can sign in with the test password", async () => {
+    const db = openDb(":memory:");
+    const { seedDemo } = await import("../src/demo.js");
+    const { clockAt } = await import("../src/matching.js");
+    seedDemo(db, clockAt(NOW, "Europe/Berlin"));
+    const demoApp = createApp({ db, mailer: { send: async () => false }, sessionSecret: "s", timeZone: "Europe/Berlin",
+      appUrl: "http://test", secureCookies: false, now: () => NOW, demo: true });
+    for (const email of ["patrick@example.com", "greg@example.com"]) {
+      await request(demoApp).post("/api/login").send({ email, password: "12345678" }).expect(200);
+    }
   });
 });

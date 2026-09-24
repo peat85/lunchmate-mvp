@@ -4,6 +4,7 @@ import type { Db, Entry } from "./db.js";
 import { displayName } from "./db.js";
 import type { Mailer } from "./mail.js";
 import { hashPassword, verifyPassword, createSessionToken, readSessionToken, SESSION_MAX_AGE_SECONDS } from "./auth.js";
+import { seedDemo } from "./demo.js";
 import { buildBoard, clockAt, isUpcoming, ANY_FOOD, type Clock } from "./matching.js";
 
 export interface AppOptions {
@@ -15,6 +16,8 @@ export interface AppOptions {
   secureCookies: boolean;
   /** Injectable for tests. */
   now?: () => Date;
+  /** Enables one-tap sign-in as a synthetic demo user. */
+  demo?: boolean;
   /** Serve ./public from the app (local dev). On Vercel the CDN serves it. */
   serveStatic?: boolean;
 }
@@ -127,7 +130,15 @@ export function createApp(opts: AppOptions) {
   app.get("/api/me", (req, res) => {
     const id = readSessionToken(readCookie(req, COOKIE), opts.sessionSecret);
     const user = id ? db.userById(id) : undefined;
-    res.json({ user: user ? publicUser(user) : null });
+    res.json({ user: user ? publicUser(user) : null, demo: Boolean(opts.demo) });
+  });
+
+  app.post("/api/demo-login", (_req, res) => {
+    if (!opts.demo) throw new HttpError(404, "Not found");
+    // re-seeds if the database was wiped since startup
+    const id = seedDemo(db, clock());
+    setSession(res, id);
+    res.json({ user: publicUser(db.userById(id)!) });
   });
 
   // --- lunches ---

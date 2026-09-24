@@ -322,4 +322,11 @@ $("#offer-form").addEventListener("submit", async (ev) => {
 setInterval(() => { if (state.user && !document.hidden && !state.openJoin) loadBoard({ quiet: true }); }, REFRESH_MS);
 document.addEventListener("visibilitychange", () => { if (state.user && !document.hidden) loadBoard({ quiet: true }); });
 
-api("GET", "/api/me").then(({ user }) => (user ? enterApp(user) : showScreen("auth"))).catch(() => showScreen("auth"));
+$("#demo-btn").addEventListener("click", () => busy($("#demo-btn"), "Signing in…", async () => {
+  try { enterApp((await api("POST", "/api/demo-login")).user); }
+  catch (err) { showError($("#auth-error"), err.message); }
+}));
+
+api("GET", "/api/me")
+  .then(({ user, demo }) => { $("#demo-box").hidden = !demo; user ? enterApp(user) : showScreen("auth"); })
+  .catch(() => showScreen("auth"));

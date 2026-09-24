@@ -3,6 +3,8 @@ import { randomBytes } from "node:crypto";
 import { openDb } from "./db.js";
 import { mailerFromEnv } from "./mail.js";
 import { createApp } from "./app.js";
+import { seedDemo } from "./demo.js";
+import { clockAt } from "./matching.js";
 
 /** Builds the app from environment variables. Shared by the local server and the Vercel function. */
 export function appFromEnv(env: NodeJS.ProcessEnv, { serveStatic = false } = {}) {
@@ -15,11 +17,16 @@ export function appFromEnv(env: NodeJS.ProcessEnv, { serveStatic = false } = {})
     console.warn("[config] SESSION_SECRET not set, using a random one (sessions reset on restart)");
   }
   const dbPath = env.DATABASE_PATH || (onVercel ? "/tmp/lunchmatch.db" : join(process.cwd(), "data", "lunchmatch.db"));
+  const db = openDb(dbPath);
+  const timeZone = env.APP_TIMEZONE || "Europe/Berlin";
+  const demo = env.DEMO_MODE !== "0"; // on by default; set DEMO_MODE=0 for real use
+  if (demo) seedDemo(db, clockAt(new Date(), timeZone));
   return createApp({
-    db: openDb(dbPath),
+    db,
+    demo,
     mailer: mailerFromEnv(env),
     sessionSecret,
-    timeZone: env.APP_TIMEZONE || "Europe/Berlin",
+    timeZone,
     appUrl: env.APP_URL || (env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000"),
     secureCookies: production,
     serveStatic,

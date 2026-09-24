@@ -2,6 +2,16 @@
 
 Find colleagues for lunch in a few taps. Built for a company of 50–70 people.
 
+**Production:** https://lunchmatch-nu.vercel.app
+
+## Demo mode (on by default)
+
+- **Try the demo:** a button on the sign-in screen signs you in as a shared demo user. No account is needed.
+- **Test accounts:** `patrick@example.com` and `greg@example.com`, both with password `12345678`.
+- **Sample lunches:** synthetic colleagues (Mia, Jonas, Lea Demo) have posted a few.
+
+The demo data is re-seeded at every cold start, so it survives Vercel's temporary database. **Set `DEMO_MODE=0` before real employees use it.**
+
 ## Core flow
 
 1. **Sign in** with your email and password, or create an account with the same two fields.
@@ -79,7 +89,7 @@ Requires Node 24.
 ```bash
 npm install
 npm run dev            # http://localhost:3000, DB in ./data/lunchmatch.db
-npm test               # vitest: matching, auth, API incl. end-to-end + no-match
+npm test               # vitest: matching, auth, API incl. end-to-end, no-match and demo mode
 npm run typecheck
 ```
 
@@ -95,8 +105,11 @@ npx vercel env add SESSION_SECRET production --token "$VERCEL_TOKEN"   # e.g. `o
 npx vercel deploy --prod --yes --token "$VERCEL_TOKEN"
 ```
 
+Or run `npx vercel login` once and drop `--token`. `vercel.json` sets `"framework": null`. Without it, Vercel auto-detects Express and tries to run `src/app.ts` as the server entry, which breaks `/`.
+
 ## Known limitations
 
+- **Demo mode is on by default.** The demo login and the test passwords are public, so turn it off (`DEMO_MODE=0`) for real use.
 - **Data on Vercel is not durable.** The SQLite file lives in `/tmp` of the function instance. It is wiped when the instance recycles, and parallel instances don't share data. This is fine for a demo but not for real use. To keep SQLite, move to Turso/libSQL (only `src/db.ts` changes) or to a host with a persistent disk.
 - Nobody is emailed when a lunch is cancelled. Joiners see it disappear from the board.
 - There is no password reset, no email verification and no login rate limiting.
