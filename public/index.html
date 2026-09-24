@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <title>LunchMatch</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥗</text></svg>">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div id="boot" class="center muted">Loading…</div>
+
+  <!-- Sign in / register -->
+  <main id="auth" class="wrap" hidden>
+    <div class="brand">
+      <div class="logo">🥗</div>
+      <h1>LunchMatch</h1>
+      <p class="muted">Find colleagues for lunch — in a few taps.</p>
+    </div>
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab active" data-mode="login" role="tab">Sign in</button>
+      <button type="button" class="tab" data-mode="register" role="tab">Create account</button>
+    </div>
+    <form id="auth-form" class="card" novalidate>
+      <label>Work email
+        <input name="email" type="email" autocomplete="email" required placeholder="you@company.com">
+      </label>
+      <label>Password
+        <input name="password" type="password" autocomplete="current-password" required minlength="8" placeholder="At least 8 characters">
+      </label>
+      <p class="error" id="auth-error" role="alert" hidden></p>
+      <button class="btn primary block" type="submit" id="auth-submit">Sign in</button>
+    </form>
+  </main>
+
+  <!-- Board -->
+  <div id="app" hidden>
+    <header class="topbar">
+      <div class="wrap row">
+        <strong>🥗 LunchMatch</strong>
+        <span class="spacer"></span>
+        <span class="muted small" id="me"></span>
+        <button class="btn ghost small" id="logout" type="button">Sign out</button>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section id="mine-section" hidden>
+        <h2>Your lunch plans</h2>
+        <div id="mine"></div>
+      </section>
+
+      <button class="btn primary block big" id="offer-btn" type="button">＋ Offer a lunch</button>
+
+      <section>
+        <div class="row">
+          <h2>Open lunches</h2>
+          <span class="spacer"></span>
+          <span class="muted small" id="updated"></span>
+        </div>
+        <div class="chips" id="food-filter" aria-label="Filter by food"></div>
+        <div id="open"><p class="muted center pad">Loading lunches…</p></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Offer a lunch -->
+  <dialog id="offer">
+    <form id="offer-form" method="dialog" novalidate>
+      <div class="row">
+        <h2>Offer a lunch</h2>
+        <span class="spacer"></span>
+        <button class="btn ghost small" type="button" data-close>✕</button>
+      </div>
+      <fieldset><legend>When</legend>
+        <div class="chips" data-group="day"></div>
+        <div class="chips" data-group="time"></div>
+      </fieldset>
+      <fieldset><legend>Food</legend>
+        <div class="chips" data-group="food"></div>
+      </fieldset>
+      <fieldset><legend>Place</legend>
+        <div class="chips" data-group="place"></div>
+      </fieldset>
+      <label>Comment <span class="muted">(optional)</span>
+        <input name="comment" maxlength="280" placeholder="e.g. meeting at the entrance">
+      </label>
+      <p class="error" id="offer-error" role="alert" hidden></p>
+      <button class="btn primary block big" type="submit" id="offer-submit">Post lunch</button>
+    </form>
+  </dialog>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="/app.js" type="module"></script>
+</body>
+</html>
